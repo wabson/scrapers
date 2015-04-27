@@ -24,7 +24,7 @@ years = range(2013, date.today().year + 1)
 
 keys = {
     'results': [ 'boat_number', 'name_1', 'club_1', 'class_1', 'points_1', 'p_d_1', 'bcu_number_1', 'name_2', 'club_2', 'class_2', 'points_2', 'p_d_2', 'bcu_number_2', 'race_name', 'race_division', 'position', 'retired', 'time' ],
-    'races': [ 'race_name', 'race_title', 'race_date', 'results_url', 'region' ],
+    'races': [ 'race_name', 'race_title', 'race_date', 'results_url', 'region', 'hasler_year' ],
     'club_points': [ 'hasler_year', 'race_url', 'race_name', 'club_name', 'position', 'points' ]
 }
 unique_keys = {
@@ -232,10 +232,11 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                 region_id = 'SCO'
             else:
                 print 'WARNING: Could not determine region for %s (Points scored for %s in regions %s)' % (race_name, ', '.join(sclubs), ', '.join(regions))
+        hasler_year = race_name == 'Hasler Final' and int(date_arr[2]) or get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0].split('-')[0])))
         # save race
         #scraperwiki.sqlite.save(unique_keys=races_unique_keys, data=dict(zip(races_keys, [race_name, race_title, race_date, race_path])), table_name=races_table_name, verbose=data_verbose)
         # Save race data
-        save_data({'races': dict(zip(keys['races'], [race_name, race_title, '%s-%s-%s' % (date_arr[2], date_arr[1], date_arr[0]), race_path, region_id]))})
+        save_data({'races': dict(zip(keys['races'], [race_name, race_title, '%s-%s-%s' % (date_arr[2], date_arr[1], date_arr[0]), race_path, region_id, hasler_year]))})
 
         # Flush all results in this division and the race itself to the datastore
         print "Saving %s results for %s" % (len(data['results']), race_name)
