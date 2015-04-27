@@ -6,7 +6,7 @@ import urllib2
 
 from datetime import date
 
-data = { 'races': [], 'results': [], 'club_points_k1': [], 'club_points_k2': [] }
+data = { 'races': [], 'results': [], 'club_points': [] }
 batch_size = 100
 
 #scraperwiki.sqlite.execute("create table club_points ('hasler_year' int, 'race_url' string, 'race_name' string, 'club_name' string, 'position' int, 'points' int)")
@@ -211,21 +211,19 @@ def scrape_results_html(race_path, race_name='', race_date=''):
 
         # Save club points if they have not been saved yet
         if not club_points_saved:
-            if len(club_points) > 0:
-                date_arr = race_date.split('/')
-                hasler_year = get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0])))
-                positions = get_club_positions()
-                for cp in positions:
-                    save_data({'club_points': {
-                        'hasler_year': hasler_year,
-                        'race_url': race_path,
-                        'race_name': race_name,
-                        'club_name': cp['name'] or cp['code'],
-                        'points': cp['points'],
-                        'position': cp['position']
-                    }})
-            else:
-                print 'Warning: Could not find club points listed for race %s' % (race_name)
+            print 'Warning: Could not find club points listed for race %s, will auto-calculate' % (race_name)
+            date_arr = race_date.split('/')
+            hasler_year = get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0].split('-')[0])))
+            positions = get_club_positions()
+            for cp in positions:
+                save_data({'club_points': {
+                    'hasler_year': hasler_year,
+                    'race_url': race_path,
+                    'race_name': race_name,
+                    'club_name': cp['name'] or cp['code'],
+                    'points': cp['points'],
+                    'position': cp['position']
+                }})
 
         # Flush all results in this division and the race itself to the datastore
         print "Saving %s results for %s" % (len(data['results']), race_name)
@@ -262,14 +260,20 @@ def add_club_points(club_code, points, entrytype):
     else:
         raise Exception('Bad boat type %s' % (entrytype))
 
+def get_total_points():
+    points = {}
+    for k, v in club_points_k1.items():
+        points[k] = v
+    for k, v in club_points_k2.items():
+        points[k] = points.get(k, []) + v
+    return points
+
 def get_club_positions(hasler_final=False):
     positions = []
     lastpoints = 9999
     lastpos = 11
     nextpos = 10
-    allpoints = []
-    allpoints.extend(club_points_k1)
-    allpoints.extend(club_points_k2)
+    allpoints = get_total_points()
     items = get_club_total_points(allpoints)
     for p in items:
         pos = lastpos if p[1] == lastpoints else nextpos
