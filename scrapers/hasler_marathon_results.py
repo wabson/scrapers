@@ -3,7 +3,9 @@ import lxml.html
 import lxml.etree
 import re
 import urllib2
+import unittest
 import sqlite3
+import sys
 
 from datetime import date
 
@@ -309,5 +311,16 @@ def save_data(items={}, force=False):
             scraperwiki.sqlite.save(unique_keys=unique_keys[k], data=data[k], table_name=table_names[k], verbose=data_verbose)
             data[k] = []
 
-main()
+class TestFunctions(unittest.TestCase):
+
+    def test_get_club_name(self):
+        self.assertEqual(get_club_name('RIC'), 'Richmond CC')
+        self.assertEqual(get_club_name('doesnotexist'), None)
+
+if __name__ == '__main__':
+    if len(sys.argv) > 0 and sys.argv[1] == 'test':
+        del sys.argv[1:]
+        unittest.main()
+    else:
+        main()
 
