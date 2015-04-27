@@ -74,12 +74,12 @@ def main():
     #delete_race_data('http://www.maidstonecanoeclub.net/joomla/index.php/racing/maidstone-marathon/results/71-maidstone-marathon-results-2012-provisional')
     #delete_race_data('http://www.hastingscanoeclub.org.uk/recent-events-results/192-1066-marathon-results-2012')
     #scrape_results_html('2012/Windsor2012.htm', 'Windsor', '14/10/2012')
-    scrape_results_html('2007/HaslerFinal2007.htm', '', '')
-    scrape_results_html('2008/HaslerFinal2007.htm', '', '')
-    scrape_results_html('2009/HaslerFinal2007.htm', '', '')
-    scrape_results_html('2010/HaslerFinal2007.htm', '', '')
-    scrape_results_html('2011/HaslerFinal2007.htm', '', '')
-    scrape_results_html('2012/HaslerFinal2007.htm', '', '')
+    #scrape_results_html('2007/HaslerFinal2007.htm', '', '')
+    #scrape_results_html('2008/HaslerFinal2007.htm', '', '')
+    #scrape_results_html('2009/HaslerFinal2007.htm', '', '')
+    #scrape_results_html('2010/HaslerFinal2007.htm', '', '')
+    #scrape_results_html('2011/HaslerFinal2007.htm', '', '')
+    #scrape_results_html('2012/HaslerFinal2007.htm', '', '')
     print "Finished"
 
 def get_races(races_url):
