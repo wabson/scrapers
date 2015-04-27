@@ -3,6 +3,7 @@ import lxml.html
 import lxml.etree
 import re
 import urllib2
+import sqlite3
 
 from datetime import date
 
@@ -53,8 +54,6 @@ def delete_race_data(url):
     scraperwiki.sqlite.execute("DELETE FROM results WHERE race_name = '" + url + "'")
     scraperwiki.sqlite.execute("DELETE FROM races WHERE results_url = '" + url + "'")
     scraperwiki.sqlite.commit()
-
-scraperwiki.sqlite.attach('hasler_marathon_club_list')
 
 def main():
     #delete_race_data('2012/Richmond2012.htm')
@@ -294,8 +293,11 @@ def get_club_total_points(club_points, club_points_k2=None):
 def get_club_name(code):
     global club_names
     if code not in club_names:
-        row = scraperwiki.sqlite.select("name from hasler_marathon_club_list.swdata where code='%s'" % (code))
-        club_names[code] = row[0]['name'] if len(row) == 1 else None
+        conn = sqlite3.connect('db/%s.sqlite' % (DB_CLUB_LIST))
+        c = conn.cursor()
+        c.execute('SELECT name FROM swdata WHERE code=\'%s\'' % (code))
+        rows = c.fetchall()
+        club_names[code] = rows[0][0] if len(rows) == 1 else None
     return club_names[code]
 
 def save_data(items={}, force=False):
