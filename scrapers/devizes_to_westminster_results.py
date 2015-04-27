@@ -34,7 +34,7 @@ table_names = {
 data_verbose=0
 
 def main():
-    for year in range(2013, 2014):
+    for year in [date.today().year]:
         data['locations'] = []
         data['class_results'] = []
         data['subclass_results'] = []
