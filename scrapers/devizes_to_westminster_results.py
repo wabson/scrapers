@@ -5,7 +5,7 @@ import lxml.html
 
 from datetime import date
 
-data = { 'locations': [], 'class_results': [], 'subclass_results': [] }
+data = { 'locations': [], 'locations_4d': [], 'class_results': [], 'subclass_results': [] }
 batch_size = 1000
 
 base_url = 'http://www.dwrace.org.uk/results'
@@ -20,11 +20,13 @@ keys = {
 unique_keys = {
     'class_results': [ 'boat_number', 'year' ],
     'subclass_results': [ 'boat_number', 'year' ],
-    'locations': [ 'boat_number', 'year' ]
+    'locations': [ 'boat_number', 'year' ],
+    'locations_4d': [ 'boat_number', 'year' ]
 }
 
 table_names = {
     'locations': 'locations',
+    'locations_4d': 'locations_4d',
     'class_results': 'class_results',
     'subclass_results': 'subclass_results'
 }
@@ -39,6 +41,7 @@ def main():
         scrape_class_results(year)
         scrape_subclass_results(year)
         scrape_locations_overnight(str(year))
+        scrape_locations_four_day(str(year))
 
 def scrape_subclass_results(year):
     print "Scraping subclass results for %s" % (year)
@@ -221,15 +224,20 @@ def scrape_class_results(year):
             raise e
 
 def scrape_locations_overnight(year):
-    locations_cols = [ 'boat_number', 'status', 'time_so_far', 'notes', 'time_devizes', 'time_pewsey', 'time_hford', 'time_newbury', 'time_aldermaston', 'time_reading', 'time_marsh', 'time_marlow', 'time_bray', 'time_windsor', 'time_shepperton', 'time_teddington', 'time_westminster' ]
-    locations_url = '%s/%s/Progress/OvernightPs.js' % (base_url, year)
-    pattern = re.compile('OvernightPs\[([0-9]+)\]\[([0-9]+)\]=\\\'(.+)\\\'')
-    countPattern = re.compile('countOvernightPs = ([0-9]+);')
+    scrape_locations(year, 'OvernightPs', [ 'boat_number', 'status', 'time_so_far', 'notes', 'time_devizes', 'time_pewsey', 'time_hford', 'time_newbury', 'time_aldermaston', 'time_reading', 'time_marsh', 'time_marlow', 'time_bray', 'time_windsor', 'time_shepperton', 'time_teddington', 'time_westminster' ], 'locations')
+
+def scrape_locations_four_day(year):
+    scrape_locations(year, 'FourDayPs', [ 'boat_number', 'status', 'elapsed_time', 'time_so_far', 'notes', 'time_devizes', 'time_pewsey', 'time_hford', 'time_newbury_arr', 'time_newbury_dep', 'time_aldermaston', 'time_reading', 'time_marsh', 'time_marlow_arr', 'time_marlow_dep', 'time_bray', 'time_windsor', 'time_shepperton', 'time_teddington_arr', 'time_teddington_dep', 'time_westminster' ], 'locations_4d')
+
+def scrape_locations(year, locations_type, locations_cols, db_table):
+    locations_url = '%s/%s/Progress/%s.js' % (base_url, year, locations_type)
+    pattern = re.compile('%s\[([0-9]+)\]\[([0-9]+)\]=\\\'(.+)\\\'' % (locations_type))
+    countPattern = re.compile('count%s = ([0-9]+);' % (locations_type))
     try:
         locations_js = scraperwiki.scrape(locations_url)
         m = re.search(countPattern, locations_js)
         if m is not None:
-            locations_array = [[''] * 17 for f in range(int(m.group(1)))]
+            locations_array = [[''] * len(locations_cols) for f in range(int(m.group(1)))]
         else:
             print 'ERROR: No count found!'
             return
@@ -246,11 +254,11 @@ def scrape_locations_overnight(year):
         for arr_item in locations_array:
             location = dict(zip(locations_cols, arr_item))
             location['year'] = year
-            save_data({'locations': location })
+            save_data({db_table: location })
 
         # Flush all results in this division and the race itself to the datastore
-        print "Saving %s location results for %s" % (len(data['locations']), year)
-        save_data({'locations': None}, force=True)
+        print "Saving %s %s locations for %s" % (len(data[db_table]), locations_type, year)
+        save_data({db_table: None}, force=True)
                 
     except urllib2.HTTPError, e:
         if e.code == 404:
