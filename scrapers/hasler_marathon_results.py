@@ -16,6 +16,8 @@ batch_size = 100
 #print scraperwiki.sqlite.execute("delete from races where race_date LIKE '%2011'")
 #scraperwiki.sqlite.commit()
 
+DB_CLUB_LIST='hasler_marathon_club_list'
+
 #base_url = 'http://www.marathon-canoeing.org.uk/marathon/results/'
 base_url = 'http://www.canoeracing.org.uk/marathon/results/'
 years = [ date.today().year-1, date.today().year ]
