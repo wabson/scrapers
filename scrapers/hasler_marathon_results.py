@@ -20,11 +20,11 @@ DB_CLUB_LIST='hasler_marathon_club_list'
 
 #base_url = 'http://www.marathon-canoeing.org.uk/marathon/results/'
 base_url = 'http://www.canoeracing.org.uk/marathon/results/'
-years = [ date.today().year-1, date.today().year ]
+years = range(2013, date.today().year + 1)
 
 keys = {
     'results': [ 'boat_number', 'name_1', 'club_1', 'class_1', 'points_1', 'p_d_1', 'bcu_number_1', 'name_2', 'club_2', 'class_2', 'points_2', 'p_d_2', 'bcu_number_2', 'race_name', 'race_division', 'position', 'retired', 'time' ],
-    'races': [ 'race_name', 'race_title', 'race_date', 'results_url' ],
+    'races': [ 'race_name', 'race_title', 'race_date', 'results_url', 'region' ],
     'club_points': [ 'hasler_year', 'race_url', 'race_name', 'club_name', 'position', 'points' ]
 }
 unique_keys = {
@@ -126,11 +126,7 @@ def scrape_results_html(race_path, race_name='', race_date=''):
         if h1_el is None:
             h1_el = results_html.find('*/H2')
         race_title = re.sub('Results\:? ', '', h1_el.text_content().strip()) if h1_el is not None else ''
-        date_arr = race_date.split('/');
-        # save race
-        #scraperwiki.sqlite.save(unique_keys=races_unique_keys, data=dict(zip(races_keys, [race_name, race_title, race_date, race_path])), table_name=races_table_name, verbose=data_verbose)
-        # Save race data
-        save_data({'races': dict(zip(keys['races'], [race_name, race_title, '%s-%s-%s' % (date_arr[2], date_arr[1], date_arr[0]), race_path]))})
+        date_arr = race_date.split('/')
         club_points_k1 = {}
         club_points_k2 = {}
         club_points_saved = False
@@ -149,7 +145,6 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                         #print 'Saving club points'
                         if len(r_td_els) == 3:
                             data_row = dict(zip(hdr_names[0:len(r_td_els)], get_row_values(r_td_els)))
-                            date_arr = race_date.split('/')
                             save_data({'club_points': {
                                 'hasler_year': get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0]))),
                                 'race_url': race_path,
@@ -228,6 +223,20 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                     'position': cp['position']
                 }})
 
+        # Save race data
+        sclubs = get_scoring_clubs()
+        regions = scoring_regions(sclubs)
+        region_id = len(regions) == 1 and regions.pop() or None
+        if region_id is None:
+            if regions == set(['SCOE', 'SCOW']) and int(date_arr[2]) < 2014:
+                region_id = 'SCO'
+            else:
+                print 'WARNING: Could not determine region for %s (Points scored for %s in regions %s)' % (race_name, ', '.join(sclubs), ', '.join(regions))
+        # save race
+        #scraperwiki.sqlite.save(unique_keys=races_unique_keys, data=dict(zip(races_keys, [race_name, race_title, race_date, race_path])), table_name=races_table_name, verbose=data_verbose)
+        # Save race data
+        save_data({'races': dict(zip(keys['races'], [race_name, race_title, '%s-%s-%s' % (date_arr[2], date_arr[1], date_arr[0]), race_path, region_id]))})
+
         # Flush all results in this division and the race itself to the datastore
         print "Saving %s results for %s" % (len(data['results']), race_name)
         save_data(items={'races': None, 'results': None, 'club_points': None}, force=True)
@@ -303,6 +312,19 @@ def get_club_name(code):
         rows = c.fetchall()
         club_names[code] = rows[0][0] if len(rows) == 1 else None
     return club_names[code]
+
+def get_club_data():
+    cols = ['code', 'name', 'region_code']
+    conn = sqlite3.connect('db/%s.sqlite' % (DB_CLUB_LIST))
+    c = conn.cursor()
+    c.execute('SELECT %s FROM swdata' % (', '.join(cols)))
+    return [ dict(zip(cols, row)) for row in c.fetchall() ]
+
+def get_scoring_clubs():
+    return set(club_points_k1.keys() + club_points_k2.keys())
+
+def scoring_regions(scoring_clubs):
+    return set([ c['region_code'] for c in get_club_data() if c['code'] in scoring_clubs ])
 
 def save_data(items={}, force=False):
     global data
