@@ -85,9 +85,17 @@ def main():
     #scrape_results_html('2012/HaslerFinal2007.htm', '', '')
     print "Finished"
 
+def scrape(url):
+    user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+    headers = { 'User-Agent' : user_agent }
+    data = None
+    req = urllib2.Request(url, data, headers)
+    response = urllib2.urlopen(req)
+    return response.read()
+
 def get_races(races_url):
     races = []
-    race_html = lxml.html.fromstring(scraperwiki.scrape(races_url))
+    race_html = lxml.html.fromstring(scrape(races_url))
     race_rows = race_html.cssselect('table tr')[skip_races:]
     #print "Found %s rows" % (len(race_rows))
     for n in range(len(race_rows)):
