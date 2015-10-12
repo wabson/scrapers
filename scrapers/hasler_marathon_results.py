@@ -124,7 +124,7 @@ def scrape_results_html(race_path, race_name='', race_date=''):
     race_url = ('%s%s' % (base_url, race_path) if race_path not in result_url_overrides else result_url_overrides[race_path]) if not race_path.startswith('http') else race_path
     try:
         # Must remove </body>\n</html>\n<html>\n<body> lines in middle of the document
-        results_html = lxml.html.fromstring(re.sub(r'</tr>\s*<td>', '</tr><tr><td>', re.sub(r'\s</body>\s</html>\s<html>\s<body>', '', scraperwiki.scrape(race_url).replace('UTF-8', 'iso-8859-1'))))
+        results_html = lxml.html.fromstring(re.sub(r'</tr>\s*<td>', '</tr><tr><td>', re.sub(r'\s</body>\s</html>\s<html>\s<body>', '', scrape(race_url).replace('UTF-8', 'iso-8859-1'))))
         h1_el = results_html.find('*/h1')
         if h1_el is None:
             h1_el = results_html.find('*/H1')
