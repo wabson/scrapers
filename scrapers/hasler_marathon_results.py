@@ -29,7 +29,7 @@ keys = {
 }
 unique_keys = {
     'results': ['race_name', 'race_division', 'boat_number'],
-    'races': [ 'race_name', 'race_date' ],
+    'races': [ 'results_url' ],
     'club_points': [ 'hasler_year', 'race_url', 'club_name' ]
 }
 table_names = { 'results': 'results', 'races': 'races', 'club_points': 'club_points' }
