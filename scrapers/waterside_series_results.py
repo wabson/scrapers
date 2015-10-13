@@ -195,6 +195,8 @@ def scrape_race(year, race):
     #print "The first 5000 characters are: ", xmldata[:5000]
     #print "XML: ", xmldata
     
+    if len(xmldata) == 0:
+        return
     root = lxml.etree.fromstring(xmldata)
     pages = list(root)
 
