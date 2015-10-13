@@ -320,10 +320,15 @@ def get_club_positions(hasler_final=False):
     items = get_club_total_points(allpoints)
     for p in items:
         pos = lastpos if p[1] == lastpoints else nextpos
-        nextpos = nextpos - 1
-        positions.append({'code': p[0], 'name': get_club_name(p[0]), 'points': p[1], 'position': pos if pos > 0 else 1}) # all clubs taking part seem to get 1 point
-        lastpos = pos
-        lastpoints = p[1]
+        club_name = get_club_name(p[0])
+        # Skip clubs which are not found in the database
+        if club_name is not None:
+            nextpos = nextpos - 1
+            positions.append({'code': p[0], 'name': club_name, 'points': p[1], 'position': pos if pos > 0 else 1}) # all clubs taking part seem to get 1 point
+            lastpos = pos
+            lastpoints = p[1]
+        else:
+            print 'WARNING: Skipping unknown club %s in points calculations' % (p[0])
     return positions
 
 def get_club_total_points(club_points, club_points_k2=None):
