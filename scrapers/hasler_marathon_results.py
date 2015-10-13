@@ -55,10 +55,9 @@ club_names = {} # Cache of recently looked-up club names
 club_codes = {} # Cache of recently looked-up club codes
 
 def delete_race_data(url):
-    scraperwiki.sqlite.execute("DELETE FROM club_points WHERE race_url = '" + url + "'")
-    scraperwiki.sqlite.execute("DELETE FROM results WHERE race_name = '" + url + "'")
-    scraperwiki.sqlite.execute("DELETE FROM races WHERE results_url = '" + url + "'")
-    scraperwiki.sqlite.commit()
+    print "DELETE FROM club_points WHERE race_url = '" + url + "';"
+    print "DELETE FROM results WHERE race_name = '" + url + "';"
+    print "DELETE FROM races WHERE results_url = '" + url + "';"
 
 def main():
     #delete_race_data('2012/Richmond2012.htm')
