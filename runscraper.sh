@@ -11,8 +11,8 @@ if [ ! -f "$script" ]; then echo "Scraper $script could not be found"; exit 1; f
 if [ ! -f "$db" ]; then echo "Database $db could not be found"; exit 1; fi
 
 # Script args
-args=
-if [ "$2" == "test" ]; then args="$args test"; fi
+shift
+args="$@"
 
 # Run the script
 export SCRAPERWIKI_DATABASE_NAME="sqlite:///$db"
