@@ -282,7 +282,7 @@ def scrape_race(year, race):
                             raise Exception('Incorrect data length for row: %s, original %s' % (values, line))
                     else: # 2003c has no column names
                         posmatch = re.search(r"^\d+", line[0].strip())
-                        timematch = re.search(r"\d+:\d+:\d+|retired|disqualified$", line[0].strip())
+                        timematch = re.search(r"\d+:\d+:\d+|retired|disqualified$", line[0].strip().lower())
                         if (posmatch and timematch):
                             values = fix_row_data([posmatch.group(), '', re.sub(r"^\d+", '', re.sub(r"\d+:\d+:\d+|retired|disqualified$", '', line[0].strip())).strip(), timematch.group()])
                             if len(values) != 5:
