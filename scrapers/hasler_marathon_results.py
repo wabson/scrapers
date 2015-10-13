@@ -49,6 +49,7 @@ extra_results = [
 #    ('2012/Richmond2012.htm', 'Richmond', '08/07/2012')
 ]
 
+declared_club_points = []
 club_points_k1 = {}
 club_points_k2 = {}
 club_names = {} # Cache of recently looked-up club names
@@ -118,6 +119,7 @@ def scrape_races_html(races):
         scrape_results_html(r[0], r[1], r[2])
 
 def scrape_results_html(race_path, race_name='', race_date=''):
+    global declared_club_points
     global club_points_k1
     global club_points_k2
     # Allow race URL to be overridden (e.g. results only posted on club website, not marathon site)
@@ -137,7 +139,7 @@ def scrape_results_html(race_path, race_name='', race_date=''):
         date_arr = race_date.split('/')
         club_points_k1 = {}
         club_points_k2 = {}
-        club_points_saved = False
+        declared_club_points = []
         
         for table_el in results_html.cssselect('table'):
             caption_el = table_el.find('caption') if table_el.find('caption') is not None else table_el.find('CAPTION')
@@ -153,15 +155,14 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                         #print 'Saving club points'
                         if len(r_td_els) == 3:
                             data_row = dict(zip(hdr_names[0:len(r_td_els)], get_row_values(r_td_els)))
-                            save_data({'club_points': {
+                            declared_club_points.append({
                                 'hasler_year': get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0]))),
                                 'race_url': race_path,
                                 'race_name': race_name,
                                 'club_name': data_row['club'],
                                 'points': data_row['points'],
                                 'position': data_row['overall']
-                            }})
-                            club_points_saved = True
+                            })
                     else:
                         if len(r_td_els) >= 5:
                             boat_num += 1
@@ -216,20 +217,40 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                             }})
 
         # Save club points if they have not been saved yet
-        if not club_points_saved:
-            print 'Warning: Could not find club points listed for race %s, will auto-calculate' % (race_name)
+        positions = get_club_positions()
+        if len(positions) > 0:
+            if len(declared_club_points) == 0:
+                print 'Warning: Could not find club points listed for race %s, will auto-calculate' % (race_name)
+            else:
+                if len(declared_club_points) != len(positions):
+                    print "** ERROR: Club points size %s does not match calculated points size %s" % (len(declared_club_points), len(positions))
+                    print "Stated:"
+                    for i in range(0, len(declared_club_points)):
+                        print "%s %s %s" % (declared_club_points[i]['club_name'], declared_club_points[i]['points'], declared_club_points[i]['position'])
+                    print "Calculated:"
+                    for i in range(0, len(positions)):
+                        print "%s %s %s" % (positions[i]['code'],  positions[i]['points'],  positions[i]['position'])
+                elif not all([ ((int(declared_club_points[i]['position']) == int(positions[i]['position']))) and (int(declared_club_points[i]['points']) == int(positions[i]['points'])) for i in range(0, len(positions)) ]):
+                    print "** ERROR: Club points %s do not match calculated points %s" % (declared_club_points, positions)
+                    print "Stated:"
+                    for i in range(0, len(declared_club_points)):
+                        print "%s %s %s" % (declared_club_points[i]['club_name'], declared_club_points[i]['points'], declared_club_points[i]['position'])
+                    print "Calculated:"
+                    for i in range(0, len(positions)):
+                        print "%s %s %s" % (positions[i]['code'],  positions[i]['points'],  positions[i]['position'])
+
             date_arr = race_date.split('/')
             hasler_year = get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0].split('-')[0])))
-            positions = get_club_positions()
             for cp in positions:
-                save_data({'club_points': {
+                points_data = {
                     'hasler_year': hasler_year,
                     'race_url': race_path,
                     'race_name': race_name,
                     'club_name': cp['name'] or cp['code'],
                     'points': cp['points'],
                     'position': cp['position']
-                }})
+                }
+                save_data({'club_points': points_data})
 
         # Save race data
         sclubs = get_scoring_clubs()
