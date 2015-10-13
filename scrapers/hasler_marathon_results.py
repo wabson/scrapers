@@ -86,6 +86,10 @@ def main():
     #scrape_results_html('2010/HaslerFinal2007.htm', '', '')
     #scrape_results_html('2011/HaslerFinal2007.htm', '', '')
     #scrape_results_html('2012/HaslerFinal2007.htm', '', '')
+    #scrape_results_html('2013/Calder2013.htm', 'Calder', '16/06/2013')
+    #scrape_results_html('http://www.royalcanoeclub.com/wp-content/uploads/2015/02/Royal-Hasler-2015-hrm.htm', 'Royal', '21/06/2015')
+    #scrape_results_html('http://tccblog.tonbridgecanoeclub.org.uk/wp-content/uploads/2015/08/TONResults15.htm', 'Tonbridge', '29/08/2015')
+    #scrape_results_html('http://wabson.org/Longridge2015.htm', 'Longridge', '30/08/2015')
     print "Finished"
 
 def scrape(url):
