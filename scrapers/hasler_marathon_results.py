@@ -1,4 +1,5 @@
 import scraperwiki
+import getopt
 import lxml.html
 import lxml.etree
 import re
@@ -20,8 +21,9 @@ DB_CLUB_LIST='hasler_marathon_club_list'
 
 #base_url = 'http://www.marathon-canoeing.org.uk/marathon/results/'
 base_url = 'http://www.canoeracing.org.uk/marathon/results/'
-years = range(2013, date.today().year + 1)
+years = [date.today().year]
 dry_run = False
+verbose = False
 
 keys = {
     'results': [ 'boat_number', 'name_1', 'club_1', 'class_1', 'points_1', 'p_d_1', 'bcu_number_1', 'name_2', 'club_2', 'class_2', 'points_2', 'p_d_2', 'bcu_number_2', 'race_name', 'race_division', 'position', 'retired', 'time' ],
@@ -124,6 +126,8 @@ def scrape_results_html(race_path, race_name='', race_date=''):
     global club_points_k2
     # Allow race URL to be overridden (e.g. results only posted on club website, not marathon site)
     race_url = ('%s%s' % (base_url, race_path) if race_path not in result_url_overrides else result_url_overrides[race_path]) if not race_path.startswith('http') else race_path
+    if verbose:
+        print race_url
     try:
         # Must remove </body>\n</html>\n<html>\n<body> lines in middle of the document
         results_html = lxml.html.fromstring(re.sub(r'</tr>\s*<td>', '</tr><tr><td>', re.sub(r'\s</body>\s</html>\s<html>\s<body>', '', scrape(race_url).replace('UTF-8', 'iso-8859-1'))))
@@ -390,6 +394,10 @@ def save_data(items={}, force=False):
             scraperwiki.sqlite.save(unique_keys=unique_keys[k], data=data[k], table_name=table_names[k])
             data[k] = []
 
+def usage():
+    print 'Usage: hasler_marathon_results.py test'
+    print 'Usage: hasler_marathon_results.py [--dry-run] [--url=] [--name=] [--date=] [--years=]'
+
 class TestFunctions(unittest.TestCase):
 
     def test_get_club_name(self):
@@ -407,5 +415,37 @@ if __name__ == '__main__':
         del sys.argv[1:]
         unittest.main()
     else:
-        main()
-
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], 'hv', ['help', 'verbose', 'dry-run', 'url=', 'name=', 'date=', 'years='])
+        except getopt.GetoptError as err:
+            # print help information and exit:
+            print str(err) # will print something like "option -a not recognized"
+            usage()
+            sys.exit(2)
+        race_url = None
+        race_name = ''
+        race_date = ''
+        for o, a in opts:
+            if o in ('-v', '--verbose'):
+                verbose = True
+            elif o in ('-h', '--help'):
+                usage()
+                sys.exit()
+            elif o == '--dry-run':
+                dry_run = True
+            elif o == '--url':
+                race_url = a
+            elif o == '--name':
+                race_name = a
+            elif o == '--date':
+                race_date = a
+            elif o == '--years':
+                years = a.split(',')
+            else:
+                print 'unhandled option %s' % (o)
+                usage()
+                sys.exit(2)
+        if (race_url is not None):
+            scrape_results_html(race_url, race_name, race_date)
+        else:
+            main()
