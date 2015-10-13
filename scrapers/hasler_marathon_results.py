@@ -34,7 +34,6 @@ unique_keys = {
 }
 table_names = { 'results': 'results', 'races': 'races', 'club_points': 'club_points' }
 
-data_verbose=0
 skip_races=0
 
 result_url_overrides = { '2008/Richmond2008.htm': 'http://www.richmondcanoeclub.com/documents/2008/hrmTemplate2richmond2008_scroll.htm',
@@ -381,7 +380,7 @@ def save_data(items={}, force=False):
         if items[k] is not None:
             data[k].append(items[k])
         if len(data[k]) >= batch_size or force == True:
-            scraperwiki.sqlite.save(unique_keys=unique_keys[k], data=data[k], table_name=table_names[k], verbose=data_verbose)
+            scraperwiki.sqlite.save(unique_keys=unique_keys[k], data=data[k], table_name=table_names[k])
             data[k] = []
 
 class TestFunctions(unittest.TestCase):
