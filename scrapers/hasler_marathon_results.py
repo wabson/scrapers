@@ -392,7 +392,7 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(len(club_codes), 1)
 
 if __name__ == '__main__':
-    if len(sys.argv) > 0 and sys.argv[1] == 'test':
+    if len(sys.argv) > 1 and sys.argv[1] == 'test':
         del sys.argv[1:]
         unittest.main()
     else:
