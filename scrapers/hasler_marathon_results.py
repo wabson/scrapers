@@ -53,6 +53,7 @@ declared_club_points = []
 club_points_k1 = {}
 club_points_k2 = {}
 club_names = {} # Cache of recently looked-up club names
+club_codes = {} # Cache of recently looked-up club codes
 
 def delete_race_data(url):
     scraperwiki.sqlite.execute("DELETE FROM club_points WHERE race_url = '" + url + "'")
@@ -159,7 +160,7 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                                 'hasler_year': get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0]))),
                                 'race_url': race_path,
                                 'race_name': race_name,
-                                'club_name': data_row['club'],
+                                'club_name': get_club_code(data_row['club']) or data_row['club'],
                                 'points': data_row['points'],
                                 'position': data_row['overall']
                             })
@@ -246,7 +247,7 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                     'hasler_year': hasler_year,
                     'race_url': race_path,
                     'race_name': race_name,
-                    'club_name': cp['name'] or cp['code'],
+                    'club_name': cp['code'],
                     'points': cp['points'],
                     'position': cp['position']
                 }
@@ -333,15 +334,28 @@ def get_club_total_points(club_points, club_points_k2=None):
     items.sort(compare)
     return items
 
-def get_club_name(code):
-    global club_names
-    if code not in club_names:
+def get_club(colname, code, cache):
+    cols = ['code', 'name', 'region_code']
+    club = cache and cache.get(code, None) or None
+    if club is None:
         conn = sqlite3.connect('db/%s.sqlite' % (DB_CLUB_LIST))
         c = conn.cursor()
-        c.execute('SELECT name FROM swdata WHERE code=\'%s\'' % (code))
+        c.execute('SELECT %s FROM swdata WHERE %s=\'%s\'' % (', '.join(cols), colname, code))
         rows = c.fetchall()
-        club_names[code] = rows[0][0] if len(rows) == 1 else None
-    return club_names[code]
+        club = dict(zip(cols, rows[0])) if len(rows) == 1 else None
+        if cache is not None and club is not None:
+            cache[code] = club
+    return club
+
+def get_club_name(code):
+    global club_names
+    club = get_club('code', code, club_names)
+    return club and club['name'] or None
+
+def get_club_code(name):
+    global club_codes
+    club = get_club('name', name, club_codes)
+    return club and club['code'] or None
 
 def get_club_data():
     cols = ['code', 'name', 'region_code']
@@ -370,6 +384,12 @@ class TestFunctions(unittest.TestCase):
     def test_get_club_name(self):
         self.assertEqual(get_club_name('RIC'), 'Richmond CC')
         self.assertEqual(get_club_name('doesnotexist'), None)
+        self.assertEqual(len(club_names), 1)
+
+    def test_get_club_code(self):
+        self.assertEqual(get_club_code('Richmond CC'), 'RIC')
+        self.assertEqual(get_club_name('doesnotexist'), None)
+        self.assertEqual(len(club_codes), 1)
 
 if __name__ == '__main__':
     if len(sys.argv) > 0 and sys.argv[1] == 'test':
