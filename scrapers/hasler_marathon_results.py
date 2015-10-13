@@ -21,6 +21,7 @@ DB_CLUB_LIST='hasler_marathon_club_list'
 #base_url = 'http://www.marathon-canoeing.org.uk/marathon/results/'
 base_url = 'http://www.canoeracing.org.uk/marathon/results/'
 years = range(2013, date.today().year + 1)
+dry_run = False
 
 keys = {
     'results': [ 'boat_number', 'name_1', 'club_1', 'class_1', 'points_1', 'p_d_1', 'bcu_number_1', 'name_2', 'club_2', 'class_2', 'points_2', 'p_d_2', 'bcu_number_2', 'race_name', 'race_division', 'position', 'retired', 'time' ],
@@ -249,7 +250,10 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                     'points': cp['points'],
                     'position': cp['position']
                 }
-                save_data({'club_points': points_data})
+                if not dry_run:
+                    save_data({'club_points': points_data})
+                else:
+                    print points_data
 
         # Save race data
         sclubs = get_scoring_clubs()
@@ -264,11 +268,15 @@ def scrape_results_html(race_path, race_name='', race_date=''):
         # save race
         #scraperwiki.sqlite.save(unique_keys=races_unique_keys, data=dict(zip(races_keys, [race_name, race_title, race_date, race_path])), table_name=races_table_name, verbose=data_verbose)
         # Save race data
-        save_data({'races': dict(zip(keys['races'], [race_name, race_title, '%s-%s-%s' % (date_arr[2], date_arr[1], date_arr[0]), race_path, region_id, hasler_year]))})
+        if not dry_run:
+            save_data({'races': dict(zip(keys['races'], [race_name, race_title, '%s-%s-%s' % (date_arr[2], date_arr[1], date_arr[0]), race_path, region_id, hasler_year]))})
+        else:
+            print ', '.join([race_name, race_title, '%s-%s-%s' % (date_arr[2], date_arr[1], date_arr[0]), race_path, str(region_id) , str(hasler_year)])
 
         # Flush all results in this division and the race itself to the datastore
         print "Saving %s results for %s" % (len(data['results']), race_name)
-        save_data(items={'races': None, 'results': None, 'club_points': None}, force=True)
+        if not dry_run:
+            save_data(items={'races': None, 'results': None, 'club_points': None}, force=True)
                 
     except urllib2.HTTPError, e:
         if e.code == 404:
