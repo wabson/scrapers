@@ -229,7 +229,7 @@ def scrape_results_html(race_path, race_name='', race_date=''):
         positions = get_club_positions(hasler_final=race_name.startswith('Hasler Final'))
         if len(positions) > 0:
             if len(declared_club_points) == 0:
-                print 'Warning: Could not find club points listed for race %s, will auto-calculate' % (race_name)
+                print 'WARNING: Could not find club points listed for race %s to check against' % (race_name)
             else:
                 if len(declared_club_points) != len(positions):
                     print "** ERROR: Club points size %s does not match calculated points size %s" % (len(declared_club_points), len(positions))
