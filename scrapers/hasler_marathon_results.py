@@ -196,10 +196,10 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                                 if (isinstance(clubs, list)):
                                     for i in [0,1]:
                                         if len(points) > i and points[i] is not None and points[i] != "":
-                                            add_club_points(clubs[i], int(points[i]), 'k1' if len(names) == 1 else 'k2')
+                                            add_club_points(clubs[i], int(points[i]), len(clubs) == 1 and 'k1' or 'k2')
                                 else:
                                     if points is not None and points != "":
-                                        add_club_points(clubs, int(points), 'k1' if len(names) == 1 else 'k2')
+                                        add_club_points(clubs, int(points), 'k1')
     
                             # Save result data
                             save_data({'results': {
@@ -226,7 +226,7 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                             }})
 
         # Save club points if they have not been saved yet
-        positions = get_club_positions()
+        positions = get_club_positions(hasler_final=race_name.startswith('Hasler Final'))
         if len(positions) > 0:
             if len(declared_club_points) == 0:
                 print 'Warning: Could not find club points listed for race %s, will auto-calculate' % (race_name)
@@ -318,22 +318,35 @@ def add_club_points(club_code, points, entrytype):
     else:
         raise Exception('Bad boat type %s' % (entrytype))
 
-def get_total_points():
+def sum_club_points(initial, *args):
+    """Append two or more dictionaries {k->val} where k is a single value or an array of values and return the result
+
+    initial is the initial value to initialise the output values from, this can be an integer (e.g. 0) or a list (e.g. [])
+    args is one or more dictionaries to add together. The dist values will initially be added to 'initial' and then to each other where keys overlap.
+    returns a new dictionary with the keys being the combined set of keys from the input dicts and the values being the sum of the values with that key.
+
+    When the input dicts contain lists, the output lists will be not sorted
+    """
     points = {}
-    for k, v in club_points_k1.items():
-        points[k] = v
-    for k, v in club_points_k2.items():
-        points[k] = points.get(k, []) + v
+    for d in args:
+        for k, v in d.items():
+            points[k] = points.get(k, initial) + v
     return points
+
+def reduce_club_points(points, limit):
+    clubs = points.keys()
+    return dict(zip(clubs, [sum(sorted(points[k], reverse=True)[0:limit]) for k in clubs]))
 
 def get_club_positions(hasler_final=False):
     positions = []
     lastpoints = 9999
     lastpos = 11
     nextpos = 10
-    allpoints = get_total_points()
-    items = get_club_total_points(allpoints)
-    for p in items:
+    if hasler_final:
+        table = get_club_total_points(club_points_k1, club_points_k2)
+    else:
+        table = get_club_total_points(sum_club_points([], club_points_k1, club_points_k2))
+    for p in table:
         pos = lastpos if p[1] == lastpoints else nextpos
         club_name = get_club_name(p[0])
         # Skip clubs which are not found in the database
@@ -347,11 +360,12 @@ def get_club_positions(hasler_final=False):
     return positions
 
 def get_club_total_points(club_points, club_points_k2=None):
-    def compare(a, b):
-        return cmp(b[1], a[1]) # compare points
-    byclub = dict(zip(club_points.keys(), [club_points[k].sort(reverse=True) or sum(club_points[k][0:12]) for k in club_points.keys()]))
-    items = byclub.items()
-    items.sort(compare)
+    if club_points_k2 is None:
+        totals = reduce_club_points(club_points, 12)
+    else:
+        totals = sum_club_points(0, reduce_club_points(club_points, 6), reduce_club_points(club_points_k2, 6))
+    items = totals.items()
+    items.sort(lambda x, y: cmp(x[1], y[1]), reverse=True) # compare points
     return items
 
 def get_club_db_url():
