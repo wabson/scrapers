@@ -225,8 +225,10 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                                 'time': time
                             }})
 
-        # Save club points if they have not been saved yet
-        positions = get_club_positions(hasler_final=race_name.startswith('Hasler Final'))
+        is_hasler_final = race_name.startswith('Hasler Final')
+        hasler_year = is_hasler_final and int(date_arr[2]) or get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0].split('-')[0])))
+        # Save club points
+        positions = get_club_positions(hasler_final=is_hasler_final)
         if len(positions) > 0:
             if len(declared_club_points) == 0:
                 print 'WARNING: Could not find club points listed for race %s to check against' % (race_name)
@@ -249,7 +251,6 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                         print "%s %s %s" % (positions[i]['code'],  positions[i]['points'],  positions[i]['position'])
 
             date_arr = race_date.split('/')
-            hasler_year = get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0].split('-')[0])))
             for cp in positions:
                 points_data = {
                     'hasler_year': hasler_year,
@@ -273,7 +274,6 @@ def scrape_results_html(race_path, race_name='', race_date=''):
                 region_id = 'SCO'
             else:
                 print 'WARNING: Could not determine region for %s (Points scored for %s in regions %s)' % (race_name, ', '.join(sclubs), ', '.join(regions))
-        hasler_year = race_name == 'Hasler Final' and int(date_arr[2]) or get_hasler_end_year(date(int(date_arr[2]), int(date_arr[1]), int(date_arr[0].split('-')[0])))
         # save race
         #scraperwiki.sqlite.save(unique_keys=races_unique_keys, data=dict(zip(races_keys, [race_name, race_title, race_date, race_path])), table_name=races_table_name, verbose=data_verbose)
         # Save race data
