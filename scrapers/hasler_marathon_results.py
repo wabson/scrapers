@@ -5,10 +5,11 @@ import lxml.etree
 import re
 import urllib2
 import unittest
-import sqlite3
 import sys
 
 from datetime import date
+from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy.sql import select, and_
 
 data = { 'races': [], 'results': [], 'club_points': [] }
 batch_size = 100
@@ -353,17 +354,22 @@ def get_club_total_points(club_points, club_points_k2=None):
     items.sort(compare)
     return items
 
+def get_club_db_url():
+    return 'sqlite:///db/%s.sqlite' % (DB_CLUB_LIST)
+
 def get_club(colname, code, cache):
     cols = ['code', 'name', 'region_code']
     club = cache and cache.get(code, None) or None
     if club is None:
-        conn = sqlite3.connect('db/%s.sqlite' % (DB_CLUB_LIST))
-        c = conn.cursor()
-        c.execute('SELECT %s FROM swdata WHERE %s=\'%s\'' % (', '.join(cols), colname, code))
-        rows = c.fetchall()
-        club = dict(zip(cols, rows[0])) if len(rows) == 1 else None
-        if cache is not None and club is not None:
-            cache[code] = club
+        eng = create_engine(get_club_db_url())
+        with eng.connect() as con:
+            meta = MetaData(eng)
+            clubs = Table('swdata', meta, autoload=True)
+            stm = select([getattr(clubs.c, col) for col in cols]).where(getattr(clubs.c, colname) == code)
+            rows = con.execute(stm).fetchall()
+            club = dict(zip(cols, rows[0])) if len(rows) == 1 else None
+            if cache is not None and club is not None:
+                cache[code] = club
     return club
 
 def get_club_name(code):
@@ -378,10 +384,13 @@ def get_club_code(name):
 
 def get_club_data():
     cols = ['code', 'name', 'region_code']
-    conn = sqlite3.connect('db/%s.sqlite' % (DB_CLUB_LIST))
-    c = conn.cursor()
-    c.execute('SELECT %s FROM swdata' % (', '.join(cols)))
-    return [ dict(zip(cols, row)) for row in c.fetchall() ]
+    eng = create_engine(get_club_db_url())
+    with eng.connect() as con:
+        meta = MetaData(eng)
+        clubs = Table('swdata', meta, autoload=True)
+        stm = select([getattr(clubs.c, col) for col in cols])
+        rows = con.execute(stm).fetchall()
+        return [ dict(zip(cols, row)) for row in rows ]
 
 def get_scoring_clubs():
     return set(club_points_k1.keys() + club_points_k2.keys())
